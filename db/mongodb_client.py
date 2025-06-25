@@ -17,7 +17,7 @@ APP_NAME = st.secrets["APP_NAME"]
 
 # === Build the connection URI ===
 MONGODB_URI = (
-    f"mongodb+srv://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_CLUSTER}.mongodb.net/"
+    f"mongodb+srv://{user}:{password}@{MONGO_CLUSTER}.mongodb.net/"
     f"{MONGO_DB}?retryWrites=true&w=majority&appName={APP_NAME}"
 )
 #uri = 'mongodb+srv://' + username + ':' + password + "@diamind.q4fmjuw.mongodb.net/?retryWrites=true&w=majority&appName=DiaMind"
