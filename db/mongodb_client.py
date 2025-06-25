@@ -3,15 +3,17 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from urllib.parse import quote_plus
 import os
+import urllib.parse
+import streamlit as st
 
 # === Load credentials securely ===
 load_dotenv()  # loads .env from project root by default
 
-MONGO_USER = quote_plus(os.getenv("MONGO_USER"))
-MONGO_PASSWORD = quote_plus(os.getenv("MONGO_PASSWORD"))
-MONGO_CLUSTER = os.getenv("MONGO_CLUSTER")
-MONGO_DB = os.getenv("MONGO_DB")
-APP_NAME = os.getenv("APP_NAME", "MyApp")
+user = urllib.parse.quote_plus(st.secrets["MONGO_USER"])
+password = urllib.parse.quote_plus(st.secrets["MONGO_PASSWORD"])
+MONGO_CLUSTER = st.secrets["MONGO_CLUSTER"]
+MONGO_DB = st.secrets["MONGO_DB"]
+APP_NAME = st.secrets["APP_NAME"]
 
 # === Build the connection URI ===
 MONGODB_URI = (

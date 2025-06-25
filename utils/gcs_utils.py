@@ -1,9 +1,10 @@
 from google.cloud import storage
 import os
+import streamlit as st
 
 # Set GCS project and bucket
-GCS_PROJECT = os.getenv("GCS_PROJECT")
-GCS_BUCKET = os.getenv("GCS_BUCKET")
+GCS_PROJECT = st.secrets["GCS_PROJECT"]
+GCS_BUCKET = st.secrets["GCS_BUCKET"]
 
 # Initialize your GCS client and bucket
 gcs_client = storage.Client(project=GCS_PROJECT)
