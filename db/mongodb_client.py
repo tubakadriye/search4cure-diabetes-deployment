@@ -6,6 +6,7 @@ import os
 import urllib.parse
 import streamlit as st
 import json
+import traceback
 
 
 # === Load credentials securely ===
@@ -33,5 +34,6 @@ try:
     mongodb_client.admin.command("ping")
     print("✅ MongoDB connection established.")
 except Exception as e:
-    print(f"❌ Failed to connect to MongoDB: {e}")
+    #print(f"❌ Failed to connect to MongoDB: {e}")
+    print(traceback.format_exc())
     mongodb_client = None
