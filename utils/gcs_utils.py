@@ -1,13 +1,19 @@
 from google.cloud import storage
 import os
 import streamlit as st
+from google.oauth2 import service_account
+
+# Convert the toml secret back to a dictionary
+gcp_creds_dict = st.secrets["gcp_service_account"]
+# Authenticate with GCP
+credentials = service_account.Credentials.from_service_account_info(gcp_creds_dict)
 
 # Set GCS project and bucket
 GCS_PROJECT = st.secrets["GCS_PROJECT"]
 GCS_BUCKET = st.secrets["GCS_BUCKET"]
 
 # Initialize your GCS client and bucket
-gcs_client = storage.Client(project=GCS_PROJECT)
+gcs_client = storage.Client(credentials=credentials,project=GCS_PROJECT)
 gcs_bucket = gcs_client.bucket(GCS_BUCKET)
 
 def upload_image_to_gcs(key: str, data: bytes) -> None:

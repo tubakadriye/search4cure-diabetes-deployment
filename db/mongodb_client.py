@@ -5,12 +5,14 @@ from urllib.parse import quote_plus
 import os
 import urllib.parse
 import streamlit as st
+import json
+
 
 # === Load credentials securely ===
 load_dotenv()  # loads .env from project root by default
 
-user = urllib.parse.quote_plus(st.secrets["MONGO_USER"])
-password = urllib.parse.quote_plus(st.secrets["MONGO_PASSWORD"])
+user = quote_plus(st.secrets["MONGO_USER"])
+password = quote_plus(st.secrets["MONGO_PASSWORD"])
 MONGO_CLUSTER = st.secrets["MONGO_CLUSTER"]
 MONGO_DB = st.secrets["MONGO_DB"]
 APP_NAME = st.secrets["APP_NAME"]
