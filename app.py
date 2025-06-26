@@ -138,7 +138,7 @@ if search_button:
         st.warning("Please enter a query.")
     else:
         with st.spinner("Searching..."):
-            query_embedding = get_gemini_embedding([query])[0]
+            query_embedding = get_gemini_embedding(query)[0]
 
             # Define the vector search pipeline
             vector_search_stage = {
