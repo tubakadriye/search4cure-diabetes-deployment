@@ -2,11 +2,14 @@ from google.cloud import storage
 import os
 import streamlit as st
 from google.oauth2 import service_account
+st.write("Secrets keys available:", list(st.secrets.keys()))
+
 
 # Convert the toml secret back to a dictionary
 gcp_creds_dict = st.secrets["gcp_service_account"]
 # Authenticate with GCP
 credentials = service_account.Credentials.from_service_account_info(gcp_creds_dict)
+
 
 # Set GCS project and bucket
 GCS_PROJECT = st.secrets["GCS_PROJECT"]
