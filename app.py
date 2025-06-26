@@ -129,7 +129,7 @@ with st.sidebar:
 # --- Search Interface  ---
 
 st.markdown("<h2 style='text-align:center'>🔍 Search Query</h2>", unsafe_allow_html=True)
-query = st.text_input("", placeholder="Enter your search query here...", key="search_query", max_chars=200)
+query = st.text_input("Search", placeholder="Enter your search query here...", key="search_query", max_chars=200)
 
 search_button = st.button("Search")
 
