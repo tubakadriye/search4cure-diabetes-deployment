@@ -10,6 +10,11 @@ from PIL import Image
 from db.mongodb_client import mongodb_client
 import os
 from google.cloud import storage
+from google.oauth2 import service_account
+
+credentials = service_account.Credentials.from_service_account_file(
+    "../keys/search4cure-diabetes-3919d2234efa.json"
+)
 
 DB_NAME = "diabetes_data"
 COLLECTION_NAME = "docs_multimodal"
@@ -19,7 +24,7 @@ GCS_PROJECT = os.getenv("GCS_PROJECT")
 GCS_BUCKET = os.getenv("GCS_BUCKET")
 
 # Initialize your GCS client and bucket
-gcs_client = storage.Client(project=GCS_PROJECT)
+gcs_client = storage.Client(credentials=credentials, project=GCS_PROJECT)
 gcs_bucket = gcs_client.bucket(GCS_BUCKET)
 
 # Connect to the MongoDB collection

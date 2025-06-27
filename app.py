@@ -1,4 +1,7 @@
 #streamlit run app.py
+# === Agent Executor Setup ===
+from agent.agent_executer import build_agent_executor
+from graph.agent_graph import build_agent_graph, agent_node
 
 from embeddings.gemini_text_embedding import get_gemini_embedding
 import streamlit as st
@@ -12,7 +15,18 @@ from db.mongodb_client import mongodb_client
 from db.index_utils import create_vector_index, create_multivector_index
 from multimodal.pdf_processing import process_and_embed_docs
 
-# --- Setup ---
+# === Agent Execution Setup ===
+agent_executor = build_agent_executor()
+
+def chatbot_node(state):
+    return agent_node(state, agent_executor.agent, name="chatbot")
+
+def tool_node(state):
+    return agent_node(state, agent_executor.agent, name="tools")
+
+graph = build_agent_graph(chatbot_node, tool_node)
+
+# --- Streamlit UI Setup ---
 st.set_page_config(page_title="Search4Cure.AI: Diabetes", layout="wide")
 st.title("🔬 Search4Cure.AI: Diabetes")
 st.markdown("**Search4Cure.AI: Diabetes** is a multimodal research assistant designed to help you explore, analyze, and embed diabetes-related scientific documents, images, and datasets using AI-powered search and visualization.")
@@ -129,7 +143,7 @@ with st.sidebar:
 # --- Search Interface  ---
 
 st.markdown("<h2 style='text-align:center'>🔍 Search Query</h2>", unsafe_allow_html=True)
-query = st.text_input("Search", placeholder="Enter your search query here...", key="search_query", max_chars=200)
+query = st.text_input("", placeholder="Enter your search query here...", key="search_query", max_chars=200)
 
 search_button = st.button("Search")
 
@@ -137,78 +151,12 @@ if search_button:
     if not query.strip():
         st.warning("Please enter a query.")
     else:
-        with st.spinner("Searching..."):
-            query_embedding = get_gemini_embedding(query)[0]
-
-            # Define the vector search pipeline
-            vector_search_stage = {
-                "$vectorSearch": {
-                    "index": "vector_index_with_filter",
-                    "compound": {
-                            "should": [
-                                {
-                                    "knnBeta": {
-                                        "vector": query_embedding,
-                                        "path": "clip_image_embedding",
-                                        "k": 5
-                                    }
-                                },
-                                {
-                                    "knnBeta": {
-                                        "vector": query_embedding,
-                                        "path": "clip_text_embedding",
-                                        "k": 5
-                                    }
-                                },
-                                {
-                                    "knnBeta": {
-                                        "vector": query_embedding,
-                                        "path": "sbert_text_embedding",
-                                        "k": 5
-                                    }
-                                }
-                            ]
-                        },
-                    "queryVector": query_embedding,
-                    "path": "embedding",
-                    "numCandidates": 150,  # Number of candidate matches to consider
-                    "limit": 5,  # Return top 4 matches
-                }
-            }
-
-            unset_stage = {
-                "$unset": "embedding"  # Exclude the 'embedding' field from the results
-            }
-
-            project_stage = {
-                "$project": {
-                    "_id": 0,  # Exclude the _id field,
-                    "combined_info": 1,
-                    "score": {
-                        "$meta": "vectorSearchScore"  # Include the search score
-                    },
-                }
-            }
-
-            pipeline = [vector_search_stage, unset_stage, project_stage]
-
-            # Execute the search
-            results = pdf_collection.aggregate(pipeline)
-
-            st.session_state.search_results = list(results)
-
-if st.session_state.search_results:
-    st.markdown("---")
-    st.markdown(f"### Results ({len(st.session_state.search_results)}):")
-    for doc in st.session_state.search_results:
-        title = doc.get("pdf_title", "Untitled")
-        url = doc.get("url", "")
-        st.write(f"**Title:** {title}")
-        if "image" in doc:
-            st.image(doc["image"], width=150)
-        if url:
-            st.write(f"Source URL: {url}")
-        st.write("---")
+        with st.spinner("Using Diabetes Research Asisstant Agent to answer..."):
+            agent_response = agent_executor.invoke({"input": query})  
+            response_text = agent_response.get("output", str(agent_response))
+             
+            st.success("Agent response:")
+            st.markdown(f"**{response_text}**") 
 
 
 
