@@ -18,3 +18,4 @@ tavily-python
 langchain-tavily
 langchain_mongodb 
 langgraph
+motor
