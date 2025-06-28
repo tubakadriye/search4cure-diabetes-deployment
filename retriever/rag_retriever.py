@@ -10,6 +10,13 @@ from PIL import Image
 from db.mongodb_client import mongodb_client
 import os
 from google.cloud import storage
+from google.oauth2 import service_account
+import streamlit as st
+
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+
 
 
 DB_NAME = "diabetes_data"
@@ -20,7 +27,7 @@ GCS_PROJECT = os.getenv("GCS_PROJECT")
 GCS_BUCKET = os.getenv("GCS_BUCKET")
 
 # Initialize your GCS client and bucket
-gcs_client = storage.Client(project=GCS_PROJECT)
+gcs_client = storage.Client(credentials=credentials, project=GCS_PROJECT)
 gcs_bucket = gcs_client.bucket(GCS_BUCKET)
 
 # Connect to the MongoDB collection
