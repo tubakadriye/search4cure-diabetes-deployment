@@ -20,6 +20,11 @@ import os
 import streamlit as st
 
 from utils.gcs_utils import get_image_from_gcs
+from google.oauth2 import service_account
+import streamlit as st
+
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"])
 
 model = genai.GenerativeModel("gemini-2.0-flash") #gemini-pro-vision
 DB_NAME = "diabetes_data"
@@ -37,7 +42,7 @@ collection = mongodb_client[DB_NAME][COLLECTION_NAME]
 db = mongodb_client[DB_NAME]
 
 # Instantiate the GCS client and bucket
-gcs_client = storage.Client(project=GCS_PROJECT)
+gcs_client = storage.Client(credentials=credentials, project=GCS_PROJECT)
 gcs_bucket = gcs_client.bucket(GCS_BUCKET)
 
 import re
