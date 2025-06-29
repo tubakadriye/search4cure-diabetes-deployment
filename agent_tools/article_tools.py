@@ -15,10 +15,40 @@ from typing import Any, Dict
 from langchain.agents import tool
 from db.mongodb_client import mongodb_client
 from retriever.rag_retriever import vector_search
+from google.cloud import storage
+import os
+
+from utils.gcs_utils import get_image_from_gcs
 
 model = genai.GenerativeModel("gemini-2.0-flash") #gemini-pro-vision
 DB_NAME = "diabetes_data"
 COLLECTION_NAME = "docs_multimodal"
+VS_INDEX_NAME = "multimodal_vector_index"
+MODEL = genai.GenerativeModel("gemini-2.0-flash")
+GCS_PROJECT = os.getenv("GCS_PROJECT")
+GCS_BUCKET = os.getenv("GCS_BUCKET")
+
+model = genai.GenerativeModel("gemini-2.0-flash") #gemini-pro-vision
+DB_NAME = "diabetes_data"
+COLLECTION_NAME = "docs_multimodal"
+# Connect to the MongoDB collection
+collection = mongodb_client[DB_NAME][COLLECTION_NAME]
+db = mongodb_client[DB_NAME]
+
+# Instantiate the GCS client and bucket
+gcs_client = storage.Client(project=GCS_PROJECT)
+gcs_bucket = gcs_client.bucket(GCS_BUCKET)
+
+import re
+def extract_markdown_section(text: str, section_title: str) -> str:
+    """
+    Extracts a section from a markdown-formatted Gemini response by header name (e.g., "Citations").
+    """
+    pattern = rf"\*\*{re.escape(section_title)}:\*\*(.*?)(?=\n\*\*|\Z)"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return "Not found"
 
 def extract_info_from_page_image(image: Image.Image, pdf_title: str, page_number: int) -> str:
     """
@@ -42,14 +72,13 @@ def extract_info_from_page_image(image: Image.Image, pdf_title: str, page_number
 
     try:
         response = model.generate_content([prompt, image])
+        #print(response)
         return response.text
     except Exception as e:
         return f"Gemini processing error: {e}"
 
-
 @tool
 def vector_search_image_tool(
-    collection_name: str,
     image_bytes: Optional[bytes] = None,
     text_query: Optional[str] = None,  
     ) -> str:
@@ -68,7 +97,7 @@ def vector_search_image_tool(
         
     """
 
-    collection_ref = db[collection_name]
+    collection_ref = db[COLLECTION_NAME]
 
     # Determine search mode
     if image_bytes:
@@ -87,38 +116,36 @@ def vector_search_image_tool(
     if not results:
         return "No matching results found."
         
-    output = []
+    summaries = []
     for r in results[:5]:
-        pdf_title = r.get("pdf_title", "Unknown Title")
-        page_number = r.get("page_number", -1)
-        gcs_key = r.get("gcs_key", "")
-        doc_id = r.get("_id")  # Ensure this is present in your search result
-
-        # Check for existing gemini_summary in DB
-        cached_doc = collection_ref.find_one({"_id": doc_id}, {"gemini_summary": 1})
-        if cached_doc and cached_doc.get("gemini_summary"):
-            summary = cached_doc["gemini_summary"]
-        else:
-            # If not cached, fetch image + generate Gemini summary
-            try:
-                page_bytes = get_image_from_gcs(gcs_bucket, gcs_key)
-                page_image = Image.open(BytesIO(page_bytes))
-            except Exception as e:
-                return f"Failed to fetch page image: {e}"
-            else:
-                summary = extract_info_from_page_image(page_image, pdf_title, page_number)
-
-                # Save summary to DB
-                collection_ref.update_one(
-                    {"_id": doc_id},
-                    {"$set": {"gemini_summary": summary}},
-                )
-
-        citation = f"### {pdf_title}, Page {page_number}"
-        output.append(f"{citation}\n{summary.strip()}")
+        summary = gemini_page_image_summary(r, collection_ref)
+    summaries.append(summary)
         
-    return "\n\n".join(output)
+    return "\n\n".join(summaries)
 
+
+
+def gemini_page_image_summary(doc, collection_ref):
+    doc_id = doc.get("_id")
+    pdf_title = doc.get("pdf_title", "Unknown Title")
+    page_number = doc.get("page_number", "?")
+    gcs_key = doc.get("gcs_key", "")
+
+    cached_doc = collection_ref.find_one({"_id": doc_id}, {"gemini_summary": 1})
+    if cached_doc and cached_doc.get("gemini_summary"):
+        summary = cached_doc["gemini_summary"]
+    else:
+        try:
+            page_bytes = get_image_from_gcs(gcs_bucket, gcs_key)
+            st.image(page_bytes)  # Directly pass the bytes
+            page_image = Image.open(BytesIO(page_bytes))
+            summary = extract_info_from_page_image(page_image, pdf_title, page_number)
+            collection_ref.update_one({"_id": doc_id}, {"$set": {"gemini_summary": summary}})
+        except Exception as e:
+            summary = f"Failed to fetch or process page image: {e}"
+
+    citation = f"### {pdf_title}, Page {page_number}"
+    return f"{citation}\n{summary.strip()}"
 
 
 @tool
@@ -137,7 +164,7 @@ def article_page_vector_search_tool(
         collection (str): MongoDB collection name to search in.
 
     Returns:
-        str: Top 5 matching pages, each with citation and summary.
+        str: Top 5 matching pages, each with mentions and linked articles.
         
     """
     collection_ref = mongodb_client[DB_NAME][collection_name]
@@ -147,12 +174,51 @@ def article_page_vector_search_tool(
     
     summaries = []
     for r in results[:5]:
+        print(r)
         title = r.get("pdf_title", "Unknown Title")
         page = r.get("page_number", "?")
-        text = r.get("summary") or r.get("page_text", "")[:300]
-        summaries.append(f"[{title}, Page {page}]: {text.strip()}")
+        text_summary = r.get("summary") or r.get("page_text", "")[:300]
+        gcs_key = r.get("gcs_key", "")
+        doc_id = r.get("_id")
+        mentions = r.get("mentions", [])
+        linked_articles = r.get("linked_articles", [])
+
+        mentions_text = ", ".join(mentions) if mentions else "None"
+        linked_articles_text = "\n".join([f"- [{a['title']}]({a['url']})" for a in linked_articles]) if linked_articles else "None"
+
+
+        # Get Gemini citations/mentions from image
+        try:
+            cached = collection_ref.find_one({"_id": doc_id}, {"gemini_summary": 1})
+            if cached and "gemini_summary" in cached:
+                gemini = cached["gemini_summary"]
+            else:
+                page_bytes = get_image_from_gcs(gcs_bucket, gcs_key)
+                page_image = Image.open(BytesIO(page_bytes))
+                gemini = extract_info_from_page_image(page_image, title, page)
+                print("gemini", gemini)
+                collection_ref.update_one({"_id": doc_id}, {"$set": {"gemini_summary": gemini}})
+        except Exception as e:
+            gemini = f"Gemini image error: {e}"
+
+        # Parse citations/figures only
+
+        citations = extract_markdown_section(gemini, "Citations")
+        figures = extract_markdown_section(gemini, "Figures/Tables")
+
+        full_summary = f"""### {title}, Page {page}
+                            **Summary**: {text_summary}
+
+                            **Mentions**: {mentions_text}
+
+                            **Linked Articles**:
+                            {linked_articles_text}
+
+                            **Citations**: {citations}
+
+                            **Figures/Tables**: {figures}
+                            """
+
+        summaries.append(full_summary)
 
     return "\n\n".join(summaries)  # return top 5 summaries
-
-
-

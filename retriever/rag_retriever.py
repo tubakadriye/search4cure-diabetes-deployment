@@ -18,7 +18,6 @@ credentials = service_account.Credentials.from_service_account_info(
 )
 
 
-
 DB_NAME = "diabetes_data"
 COLLECTION_NAME = "docs_multimodal"
 VS_INDEX_NAME = "multimodal_vector_index"
@@ -36,7 +35,7 @@ collection = mongodb_client[DB_NAME][COLLECTION_NAME]
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash",
-                            temperature=0,
+                            temperature=1,
                             max_tokens=None,
                             timeout=None,
                             max_retries=3,
@@ -219,7 +218,7 @@ def parse_json_response(response: str) -> dict:
     try:
         return json.loads(response)
     except json.JSONDecodeError:
-        return {"summary": response, "mentioned_articles": [], "treatments": []}
+        return {"summary": response, "mentions": [], "linked_articles": []}
 
 
 

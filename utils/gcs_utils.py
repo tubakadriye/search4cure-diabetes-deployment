@@ -1,5 +1,4 @@
 from google.cloud import storage
-import os
 import streamlit as st
 from google.oauth2 import service_account
 #st.write("Secrets keys available:", list(st.secrets.keys()))

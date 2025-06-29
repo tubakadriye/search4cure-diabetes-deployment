@@ -50,7 +50,10 @@ Your key responsibilities include:
     - Title: [pdf_title]
     - Page: [page_number]
     - Summary: [Gemini or page_text extract]
+    - Linked Articles: [linked_articles]
+    - Url: [url]
     - Notes: [Mention if image, table, or citation was detected]
+   
 
 8. Acting responsibly:
   - DO NOT make up any values.
