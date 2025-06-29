@@ -17,6 +17,7 @@ from db.mongodb_client import mongodb_client
 from retriever.rag_retriever import vector_search
 from google.cloud import storage
 import os
+import streamlit as st
 
 from utils.gcs_utils import get_image_from_gcs
 
