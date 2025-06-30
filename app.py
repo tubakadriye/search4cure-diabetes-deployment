@@ -137,7 +137,6 @@ with st.sidebar:
 st.markdown("<h2 style='text-align:center'>🔍 Search Query</h2>", unsafe_allow_html=True)
 query = st.text_input("", placeholder="Enter your search query here...", key="search_query", max_chars=200)
 
-search_button = st.button("Search")
 
 # Add image upload in query section
 uploaded_query_image = st.file_uploader("Or upload an image to query about:", type=["png", "jpg", "jpeg"], key="query_image")
@@ -145,7 +144,8 @@ uploaded_query_image = st.file_uploader("Or upload an image to query about:", ty
 image_base64 = None
 # Show the uploaded image (if provided)
 if uploaded_query_image:
-    st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True)      
+    st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True)  
+        
 search_button = st.button("Search")
 
 if search_button:
