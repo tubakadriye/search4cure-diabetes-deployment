@@ -21,7 +21,8 @@ import streamlit as st
 
 from utils.gcs_utils import get_image_from_gcs
 from google.oauth2 import service_account
-import streamlit as st
+import base64
+
 
 credentials = service_account.Credentials.from_service_account_info(
     st.secrets["gcp_service_account"])
@@ -85,7 +86,8 @@ def extract_info_from_page_image(image: Image.Image, pdf_title: str, page_number
 
 @tool
 def vector_search_image_tool(
-    image_bytes: Optional[bytes] = None,
+    image_base64: Optional[str] = None,
+    #image_bytes: Optional[bytes] = None,
     text_query: Optional[str] = None,  
     ) -> str:
     """
@@ -94,7 +96,8 @@ def vector_search_image_tool(
     searches using image embeddings.
 
     Args:
-        image_bytes (bytes, optional): Query image content.
+        image_base64 (str, optional): Base64-encoded image.
+        #image_bytes (bytes, optional): Query image content.
         text_query (str, optional): Text query to generate image embedding.
         collection_name (str): MongoDB collection name.
 
@@ -105,14 +108,16 @@ def vector_search_image_tool(
 
     collection_ref = db[COLLECTION_NAME]
 
-    # Determine search mode
-    if image_bytes:
+    # Decode and search by image
+    if image_base64:
         try:
+            image_bytes = base64.b64decode(image_base64)
             query_image = Image.open(BytesIO(image_bytes))
         except Exception as e:
             return f"Invalid image input: {e}"
         results = vector_search(query_image, model="clip_image", collection=collection_ref, display_images=False)
 
+    # Search by text
     elif text_query:
         results = vector_search(text_query, model="clip", collection=collection_ref, display_images=False)
 
@@ -128,6 +133,7 @@ def vector_search_image_tool(
         summaries.append(summary)
         
     return "\n\n".join(summaries)
+
 
 
 

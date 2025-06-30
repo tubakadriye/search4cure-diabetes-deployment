@@ -14,6 +14,7 @@ from embeddings.clip import get_clip_embedding
 from db.mongodb_client import mongodb_client
 from db.index_utils import create_vector_index, create_multivector_index
 from multimodal.pdf_processing import process_and_embed_docs
+import base64
 DB_NAME = "diabetes_data"
 response_collection = mongodb_client[DB_NAME]["responses"]
 
@@ -137,16 +138,58 @@ query = st.text_input("", placeholder="Enter your search query here...", key="se
 
 search_button = st.button("Search")
 
+# Add image upload in query section
+uploaded_query_image = st.file_uploader("Or upload an image to query about:", type=["png", "jpg", "jpeg"], key="query_image")
+
+image_base64 = None
+# Show the uploaded image (if provided)
+if uploaded_query_image:
+    st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True)      
+search_button = st.button("Search")
+
 if search_button:
-    if not query.strip():
-        st.warning("Please enter a query.")
+    if not query.strip() and not uploaded_query_image:
+        st.warning("Please enter a query or upload an image.")
     else:
         with st.spinner("Using Diabetes Research Asisstant Agent to answer..."):
-            agent_response = agent_executor.invoke({"input": query})  
-            response_text = agent_response.get("output", str(agent_response))
+            try:
+                # Case 1: Both image and text query provided
+                if uploaded_query_image and query.strip():
+                    image_bytes = uploaded_query_image.read()
+                    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
-        st.session_state.agent_raw_response = response_text
-        st.session_state.agent_review_mode = True  # activate HITL mode
+                    # If your agent_executor can handle multimodal input, pass both
+                    combined_input = {
+                        "input": f"query: {query} , image_base64: {image_base64}"
+                    }
+                    agent_response = agent_executor.invoke(combined_input)
+                    response_text = agent_response.get("output", str(agent_response))
+
+                    st.session_state.agent_raw_response = response_text
+                    st.session_state.agent_review_mode = True
+                    st.markdown("### 🖼️ + 📄 Multimodal Search Results")
+                    st.markdown(response_text)
+                # Case 2: Only image uploaded
+                elif uploaded_query_image:
+                    image_bytes = uploaded_query_image.read()
+                    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+                    image_search_result = vector_search_image_tool.invoke({
+                        "image_base64": image_base64
+                    })
+                    st.markdown("### 🖼️ Image-Based Search Results")
+                    st.markdown(image_search_result)
+
+                # Run text-based query using the agent
+                elif query.strip():                
+                    agent_response = agent_executor.invoke({"input": query})
+                    response_text = agent_response.get("output", str(agent_response))                    
+                    st.markdown("### 📄 Text-Based Search Results")
+                    st.markdown(response_text)
+            except Exception as e:
+                st.error(f"Error during text-based search: {e}")
+            st.session_state.agent_raw_response = response_text
+            st.session_state.agent_review_mode = True  # activate HITL mode
+
 
 
 # --- Human-in-the-Loop Review Interface ---
