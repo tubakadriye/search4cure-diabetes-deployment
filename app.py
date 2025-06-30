@@ -15,6 +15,7 @@ from db.mongodb_client import mongodb_client
 from db.index_utils import create_vector_index, create_multivector_index
 from multimodal.pdf_processing import process_and_embed_docs
 import base64
+from agent_tools.article_tools import vector_search_image_tool
 DB_NAME = "diabetes_data"
 response_collection = mongodb_client[DB_NAME]["responses"]
 
