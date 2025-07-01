@@ -145,7 +145,7 @@ image_base64 = None
 if uploaded_query_image:
     st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True)  
 
-search_button = st.button("Search")
+search_button = st.button("Search", key="search_btn")
 
 if search_button:
     if not query.strip() and not uploaded_query_image:
