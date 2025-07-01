@@ -135,7 +135,7 @@ with st.sidebar:
 # --- Search Interface  ---
 
 st.markdown("<h2 style='text-align:center'>🔍 Search Query</h2>", unsafe_allow_html=True)
-query = st.text_input("", placeholder="Enter your search query here...", key="search_query", max_chars=200)
+query = st.text_input(label="Search query", placeholder="Enter your search query here...", key="search_query", max_chars=200)
 
 # Add image upload in query section
 uploaded_query_image = st.file_uploader("Or upload an image to query about:", type=["png", "jpg", "jpeg"], key="query_image")
