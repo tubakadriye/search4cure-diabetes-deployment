@@ -54,7 +54,7 @@ with st.sidebar:
     st.header("Upload PDFs, CSVs, or Images")
 
     # PDFs from file
-    uploaded_files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True, key="pdf_upload")
     if uploaded_files:
         user_upload_dir = "user_uploads"
         os.makedirs(user_upload_dir, exist_ok=True)
@@ -75,7 +75,7 @@ with st.sidebar:
         st.session_state.user_pdfs += load_user_pdf_from_url(pdf_url)
 
     # --- CSV Upload ---
-    uploaded_csv = st.file_uploader("📊 Upload CSV", type=["csv", "xlsx", "xls", "json"])
+    uploaded_csv = st.file_uploader("📊 Upload CSV", type=["csv", "xlsx", "xls", "json"], key="csv_upload")
     csv_name = uploaded_csv.name.rsplit('.', 1)[0] if uploaded_csv else ""
     st.text_input("CSV Name:", value=csv_name)
 
@@ -85,7 +85,7 @@ with st.sidebar:
     #all_pdfs = user_pdfs
 
     if add_research:
-        if st.button("📥 Load Arxiv & PubMed PDFs"):
+        if st.button("📥 Load Arxiv & PubMed PDFs", key="load_arxiv_pubmed"):
             with st.spinner("Loading Arxiv and PubMed PDFs..."):
                 arxiv_pdfs = ArxivPDFLoader(query="Diabetes").download_pdfs()
                 pubmed_pdfs = PubMedPDFLoader(query="Diabetes").download_pdfs()
@@ -94,12 +94,12 @@ with st.sidebar:
                 st.success(f"Loaded {len(arxiv_pdfs) + len(pubmed_pdfs)} research PDFs.")
 
     # Upload image
-    uploaded_image = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"])
+    uploaded_image = st.file_uploader("Upload Image", type=["png", "jpg", "jpeg"], key="image_upload")
     default_name = uploaded_image.name.rsplit('.', 1)[0] if uploaded_image else ""
     custom_image_name = st.text_input("Image name:", default_name)
 
     # -- Process all button ---
-    if st.button("📥 Process All"):
+    if st.button("📥 Process All", key="process_all"):
         if not st.session_state.user_pdfs and not uploaded_image:
             st.warning("Please upload PDFs or an image first.")
         else:
