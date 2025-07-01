@@ -144,7 +144,7 @@ image_base64 = None
 # Show the uploaded image (if provided)
 if uploaded_query_image:
     print("hey")
-    st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True, key= "uploaded")  
+    st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True)  
 
 search_Query_button = st.button("Search!", key="search_query_butn")
 
