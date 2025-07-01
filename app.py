@@ -137,7 +137,6 @@ with st.sidebar:
 st.markdown("<h2 style='text-align:center'>🔍 Search Query</h2>", unsafe_allow_html=True)
 query = st.text_input("", placeholder="Enter your search query here...", key="search_query", max_chars=200)
 
-
 # Add image upload in query section
 uploaded_query_image = st.file_uploader("Or upload an image to query about:", type=["png", "jpg", "jpeg"], key="query_image")
 
@@ -145,7 +144,7 @@ image_base64 = None
 # Show the uploaded image (if provided)
 if uploaded_query_image:
     st.image(uploaded_query_image, caption="🔍 Uploaded Query Image", use_container_width=True)  
-        
+
 search_button = st.button("Search")
 
 if search_button:
@@ -208,7 +207,7 @@ if st.session_state.agent_review_mode:
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("✅ Approve"):
+        if st.button("✅ Approve", key="approve_btn"):
             st.session_state.agent_review_mode = False
             st.success("✅ Approved Response:")
             st.markdown(f"**{st.session_state.agent_approved_text}**")
@@ -217,7 +216,7 @@ if st.session_state.agent_review_mode:
     
 
     with col2:
-        if st.button("🔄 Regenerate Agent Response"):
+        if st.button("🔄 Regenerate Agent Response", key="regenerate_btn"):
             with st.spinner("Regenerating answer..."):
                 new_agent_response = agent_executor.invoke({"input": query})
                 new_response_text = new_agent_response.get("output", str(new_agent_response))
@@ -233,7 +232,7 @@ if st.session_state.agent_review_mode:
         key="expert_response"
         )
 
-    if st.button("✅ Submit Expert Answer"):
+    if st.button("✅ Submit Expert Answer", key="submit_expert_btn"):
         st.session_state.agent_approved_text = expert_input
         st.session_state.agent_review_mode = False
         st.success("✅ Expert-approved Response:")
