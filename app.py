@@ -154,6 +154,7 @@ if search_Query_button:
     else:
         with st.spinner("Using Diabetes Research Asisstant Agent to answer..."):
             try:
+                response_text = ""
                 # Case 1: Both image and text query provided
                 if uploaded_query_image and query.strip():
                     image_bytes = uploaded_query_image.read()
@@ -174,22 +175,25 @@ if search_Query_button:
                 elif uploaded_query_image:
                     image_bytes = uploaded_query_image.read()
                     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
-                    image_search_result = vector_search_image_tool.invoke({
+                    response_text = vector_search_image_tool.invoke({
                         "image_base64": image_base64
                     })
                     st.markdown("### 🖼️ Image-Based Search Results")
-                    st.markdown(image_search_result)
+                    st.markdown(response_text)
 
                 # Run text-based query using the agent
                 elif query.strip():                
                     agent_response = agent_executor.invoke({"input": query})
                     response_text = agent_response.get("output", str(agent_response))                    
                     st.markdown("### 📄 Text-Based Search Results")
-                    st.markdown(response_text)
+                st.markdown(response_text)
+                st.session_state.agent_raw_response = response_text
+                st.session_state.agent_review_mode = True  # activate HITL mode
+                
             except Exception as e:
-                st.error(f"Error during text-based search: {e}")
-            st.session_state.agent_raw_response = response_text
-            st.session_state.agent_review_mode = True  # activate HITL mode
+                st.error(f"Error during search: {e}")
+            
+            
 
 
 
